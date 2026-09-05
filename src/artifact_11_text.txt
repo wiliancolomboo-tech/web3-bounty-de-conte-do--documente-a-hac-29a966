@@ -1,0 +1,8 @@
+hackathon_content_registry
+    ✔ 1. Initializes hackathon escrow track successfully (182ms)
+    ✔ 2. Funds hackathon escrow vault with native SOL (76ms)
+    ✔ 3. Prevents claims with unauthorized oracle signatures (45ms)
+    ✔ 4. Student executes valid claim with official Oracle co-signer (89ms)
+    ✔ 5. Prevents double-spend replay attacks by same student (38ms)
+
+  5 passing (430ms)

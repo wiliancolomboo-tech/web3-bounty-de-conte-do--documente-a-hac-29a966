@@ -1,0 +1,10 @@
++-----------------------------------------------------------------------------------------+
+|                                    InstaHack-Sol Protocol                               |
+|                                                                                         |
+|  [ University Participant ] ---> [ Instagram Graph API / Stories / Reels ]              |
+|                                                  |                                      |
+|                                                  v                                      |
+|  [ Anchor Program (PDA Vault) ] <--- [ Ed25519 Oracle Keeper Attestation Service ]       |
+|               |                                                                         |
+|               +---> [ Automated Instant SPL/SOL Disbursement to Student Wallet ]        |
++-----------------------------------------------------------------------------------------+

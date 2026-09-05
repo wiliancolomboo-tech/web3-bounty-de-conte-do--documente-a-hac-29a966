@@ -1,0 +1,17 @@
++--------------------------+------------------------------------+-------------------------------------------+
+| Attack Vector            | Threat Profile                     | Technical Mitigation                      |
++--------------------------+------------------------------------+-------------------------------------------+
+| Sybil / Double Claim     | Malicious student submits same IG  | Deterministic Submission PDA:             |
+|                          | post across multiple claims        | [b"submission", hackathon_pubkey, student]|
+|                          |                                    | Program init halts subsequent attempts.   |
++--------------------------+------------------------------------+-------------------------------------------+
+| Oracle Impersonation     | Unauthorized caller crafts fake    | Strict account constraint:                |
+|                          | Instagram verification proof       | oracle_signer.key() == oracle_pubkey      |
+|                          |                                    | Both student and oracle must sign.        |
++--------------------------+------------------------------------+-------------------------------------------+
+| Lamport Drain Attack     | Overflow / underflow in vault      | Safe Math + Explicit vault balance guard  |
+|                          | lamport extraction                 | require!(vault_balance >= reward_amount)  |
++--------------------------+------------------------------------+-------------------------------------------+
+| PDA Seed Collision       | Multi-track hackathon collision    | All seed components length-prefixed and   |
+|                          |                                    | 8-byte LE encoded: [b"hackathon", id.le]  |
++--------------------------+------------------------------------+-------------------------------------------+

@@ -1,0 +1,40 @@
+flowchart TD
+    subgraph ClientLayer ["Client & Social Layer"]
+        UP[University Participant / Student]
+        IG[Instagram Platform: Reels / Stories / Posts]
+        WH[Instagram Webhook Service]
+    end
+
+    subgraph OffChainOracle ["Decentralized Keeper & Oracle Layer"]
+        OR[Oracle Keeper Node]
+        ED[Ed25519 Verification Engine]
+        AR[Arweave / Irys Archival Storage]
+    end
+
+    subgraph OnChainProgram ["Solana Anchor Engine: hackathon_content_registry"]
+        CFG[(Hackathon PDA: b'hackathon', id)]
+        SUB[(Submission PDA: b'submission', hackathon, student)]
+        VLT[(Escrow Vault PDA: b'vault', hackathon)]
+        ACC[Account Checks & Security Guards]
+        DISP[SPL / Native Payout CPI Dispatcher]
+    end
+
+    subgraph Destination ["Student Settlement"]
+        STW[Student Wallet / ATA]
+    end
+
+    %% Execution Flows
+    UP -- "1. Publishes #SolanaHackathon Content" --> IG
+    IG -- "2. Webhook Event Fired" --> WH
+    WH -- "3. Ingests Media & Verifies Tags" --> OR
+    OR -- "4. Permanent Archive of Media" --> AR
+    AR -- "5. Return Arweave Manifest URI" --> OR
+    OR -- "6. Sign Attestation Digest (Ed25519)" --> ED
+
+    UP -- "7. Execute claim_content_bounty(proof, uri)" --> ACC
+    ED -. "8. Oracle Signer Verification" .-> ACC
+    CFG --> ACC
+    ACC --> SUB
+    ACC -- "9. Invoke Escrow Transfer CPI" --> VLT
+    VLT -- "10. Settle Reward via PDA Signer Seeds" --> DISP
+    DISP -- "11. Native SOL or SPL Micro-Disbursement" --> STW
