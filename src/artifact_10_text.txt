@@ -1,0 +1,8 @@
+InstaHack: Complete Verification & Settlement Matrix
+    ✔ 1. Initializes the Hackathon Event with Escrow Vault (182ms)
+    ✔ 2. Funds the Escrow Vault with 5.0 SOL (89ms)
+    ✔ 3. Successfully Submits Instagram Reel & Claims 0.25 SOL Reward (142ms)
+    ✔ 4. Security Guard Assertion: Prevents Double-Spending of Identical Post (68ms)
+    ✔ 5. Security Guard Assertion: Rejects Post Timestamps Outside Hackathon Window (54ms)
+
+  5 passing (1.2s)

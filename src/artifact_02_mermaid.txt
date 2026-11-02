@@ -1,40 +1,41 @@
 flowchart TD
-    subgraph ClientLayer ["Client & Social Layer"]
-        UP[University Participant / Student]
-        IG[Instagram Platform: Reels / Stories / Posts]
-        WH[Instagram Webhook Service]
+    subgraph "Off-Chain / Social Ingestion Layer"
+        IG[Student / Creator Instagram Post] -->|Publishes with #SolanaHackathon| API[Instagram Graph API / Webhook]
+        API -->|Fetch Media Digest, Author, Metrics| ORACLE[Authorized Verification Keeper]
+        ORACLE -->|Generate Ed25519 Signature| SIG[Signed Content Payload]
     end
 
-    subgraph OffChainOracle ["Decentralized Keeper & Oracle Layer"]
-        OR[Oracle Keeper Node]
-        ED[Ed25519 Verification Engine]
-        AR[Arweave / Irys Archival Storage]
+    subgraph "Solana Runtime (InstaSol Anchor Program)"
+        SIG -->|Verify & Claim Tx| IX_CLAIM[Instruction: verify_and_claim_submission]
+        
+        subgraph "Security Guards & Account Verification"
+            IX_CLAIM --> SG1{Signer Check: Creator Key}
+            SG1 -- Valid --> SG2{Authority Check: Oracle Key}
+            SG2 -- Valid --> SG3{Seed Check: Submission PDA Exists?}
+            SG3 -- Uninitialized --> SG4{Timestamp Window Valid?}
+            SG4 -- Valid --> SG5{Min Engagement Met?}
+        end
+
+        subgraph "State Accounts (PDAs)"
+            EVENT_PDA[("EventConfig PDA\nseeds: ['event', event_id]")]
+            SUBMISSION_PDA[("SubmissionRecord PDA\nseeds: ['submission', event_pubkey, post_hash]")]
+            VAULT_PDA[("BountyEscrowVault PDA\nseeds: ['vault', event_pubkey]")]
+        end
+
+        SG5 -- All Checks Pass --> SUBMISSION_PDA
+        EVENT_PDA -. Read Rules .-> SG4
+        EVENT_PDA -. Update Stats .-> EVENT_PDA
+
+        subgraph "CPI Disbursal Pipeline"
+            SUBMISSION_PDA -->|Trigger CPI| CPI_TRANSFER[SPL Token::Transfer Checked]
+            VAULT_PDA -->|Signed by PDA seeds| CPI_TRANSFER
+            CPI_TRANSFER -->|Disburse Bounty SPL| CREATOR_ATA[Student Creator ATA]
+        end
     end
 
-    subgraph OnChainProgram ["Solana Anchor Engine: hackathon_content_registry"]
-        CFG[(Hackathon PDA: b'hackathon', id)]
-        SUB[(Submission PDA: b'submission', hackathon, student)]
-        VLT[(Escrow Vault PDA: b'vault', hackathon)]
-        ACC[Account Checks & Security Guards]
-        DISP[SPL / Native Payout CPI Dispatcher]
-    end
-
-    subgraph Destination ["Student Settlement"]
-        STW[Student Wallet / ATA]
-    end
-
-    %% Execution Flows
-    UP -- "1. Publishes #SolanaHackathon Content" --> IG
-    IG -- "2. Webhook Event Fired" --> WH
-    WH -- "3. Ingests Media & Verifies Tags" --> OR
-    OR -- "4. Permanent Archive of Media" --> AR
-    AR -- "5. Return Arweave Manifest URI" --> OR
-    OR -- "6. Sign Attestation Digest (Ed25519)" --> ED
-
-    UP -- "7. Execute claim_content_bounty(proof, uri)" --> ACC
-    ED -. "8. Oracle Signer Verification" .-> ACC
-    CFG --> ACC
-    ACC --> SUB
-    ACC -- "9. Invoke Escrow Transfer CPI" --> VLT
-    VLT -- "10. Settle Reward via PDA Signer Seeds" --> DISP
-    DISP -- "11. Native SOL or SPL Micro-Disbursement" --> STW
+    classDef guard fill:#f96,stroke:#333,stroke-width:2px;
+    classDef state fill:#69f,stroke:#333,stroke-width:2px;
+    classDef cpi fill:#9f6,stroke:#333,stroke-width:2px;
+    class SG1,SG2,SG3,SG4,SG5 guard;
+    class EVENT_PDA,SUBMISSION_PDA,VAULT_PDA state;
+    class CPI_TRANSFER cpi;

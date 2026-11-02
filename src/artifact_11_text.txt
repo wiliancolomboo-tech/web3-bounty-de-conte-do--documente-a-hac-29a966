@@ -1,8 +1,9 @@
-hackathon_content_registry
-    ✔ 1. Initializes hackathon escrow track successfully (182ms)
-    ✔ 2. Funds hackathon escrow vault with native SOL (76ms)
-    ✔ 3. Prevents claims with unauthorized oracle signatures (45ms)
-    ✔ 4. Student executes valid claim with official Oracle co-signer (89ms)
-    ✔ 5. Prevents double-spend replay attacks by same student (38ms)
+instasol_engagement protocol tests
+    ✔ 1. Initializes the University Hackathon Event (342ms)
+    ✔ 2. Funds Event Escrow Vault (218ms)
+    ✔ 3. Successfully verifies and claims Instagram post submission (412ms)
+    ✔ 4. Prevents duplicate claims (Replay Protection) (195ms)
+    ✔ 5. Rejects claims with insufficient engagement metrics (188ms)
+    ✔ 6. Rejects claims signed by an unauthorized oracle key (174ms)
 
-  5 passing (430ms)
+  6 passing (2s)

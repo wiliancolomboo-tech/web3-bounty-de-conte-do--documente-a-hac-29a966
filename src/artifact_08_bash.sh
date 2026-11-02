@@ -1,1 +1,1 @@
-anchor build
+solana address -k target/deploy/instasol_engagement-keypair.json

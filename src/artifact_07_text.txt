@@ -1,0 +1,9 @@
+hackdoc-protocol E2E QA Test Matrix
+    ✔ 1. Initializes the hackathon event with Escrow Vault and Oracle Key (482ms)
+    ✔ 2. Funds the event escrow vault with SOL (415ms)
+    ✔ 3. Successfully verifies Instagram post & claims bounty for Alice (Milestone 1: Check-in) (520ms)
+    ✔ 4. Rejects double claim / replay attack of the same Instagram Media ID (185ms)
+    ✔ 5. Rejects claims with invalid oracle signer signature (198ms)
+    ✔ 6. Closes event and refunds remaining escrow balance to authority (430ms)
+
+  6 passing (2.3s)

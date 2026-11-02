@@ -1,0 +1,7 @@
+InstaProof-Sol End-to-End Suite
+    ✔ Initializes campaign escrow and sets oracle credentials (12410 CU)
+    ✔ Registers an Instagram Reel publication from a university hacker (8930 CU)
+    ✔ Rejects verification when submitted by an unauthorized oracle key
+    ✔ Fails verification if Instagram metric thresholds are below requirement
+    ✔ Successfully verifies content, releases escrow reward, and updates on-chain state (11150 CU)
+    ✔ Prevents double-spend (replay attack) disbursement on already settled media

@@ -1,0 +1,18 @@
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Attack Vector             | Vulnerability Classification       | On-Chain Defense Mechanism                              |
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Replay Attacks            | Double-spending content bounties  | Seed derivation: ['submission', event_pda, media_id_hash]|
+|                           |                                   | Prevents re-creating the same PDA twice.                |
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Unauthorized Attestation  | Sybil oracle injection            | Hardcoded oracle pubkey in event state. Constraint      |
+|                           |                                   | `oracle.key() == event.oracle` enforced on-chain.       |
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Creator Impersonation     | Stealing bounty payouts           | `creator` parameter validated against                   |
+|                           |                                   | `creator_record.creator` identity stored in state.      |
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Escrow Drainage           | Math underflow / Reentrancy       | Checked arithmetic (`checked_add`, `checked_sub`).      |
+|                           |                                   | Solvency checks: `vault_lamports >= bounty_amount`.      |
++---------------------------+-----------------------------------+---------------------------------------------------------+
+| Out-of-Bounds Submissions | Retroactive or future submissions | Clock validation: enforces `start_timestamp <= post     |
+|                           |                                   | <= end_timestamp` and `now <= end_timestamp`.          |
++---------------------------+-----------------------------------+---------------------------------------------------------+

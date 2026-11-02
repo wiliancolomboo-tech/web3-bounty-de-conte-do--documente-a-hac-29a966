@@ -1,17 +1,32 @@
-+--------------------------+------------------------------------+-------------------------------------------+
-| Attack Vector            | Threat Profile                     | Technical Mitigation                      |
-+--------------------------+------------------------------------+-------------------------------------------+
-| Sybil / Double Claim     | Malicious student submits same IG  | Deterministic Submission PDA:             |
-|                          | post across multiple claims        | [b"submission", hackathon_pubkey, student]|
-|                          |                                    | Program init halts subsequent attempts.   |
-+--------------------------+------------------------------------+-------------------------------------------+
-| Oracle Impersonation     | Unauthorized caller crafts fake    | Strict account constraint:                |
-|                          | Instagram verification proof       | oracle_signer.key() == oracle_pubkey      |
-|                          |                                    | Both student and oracle must sign.        |
-+--------------------------+------------------------------------+-------------------------------------------+
-| Lamport Drain Attack     | Overflow / underflow in vault      | Safe Math + Explicit vault balance guard  |
-|                          | lamport extraction                 | require!(vault_balance >= reward_amount)  |
-+--------------------------+------------------------------------+-------------------------------------------+
-| PDA Seed Collision       | Multi-track hackathon collision    | All seed components length-prefixed and   |
-|                          |                                    | 8-byte LE encoded: [b"hackathon", id.le]  |
-+--------------------------+------------------------------------+-------------------------------------------+
+================================================================================
+TIME     | VISUAL DISPLAY                       | SPOKEN NARRATIVE / AUDIO SCRIPT
+================================================================================
+00:00-   | [Split Screen] Left: Busy university | "Hackathons thrive on energy, but documenting
+00:20    | hackathon in São Paulo / Lisbon.     | that energy on Instagram has always been broken.
+         | Right: Unanswered Instagram posts    | Coordinators spend days tracking hashtags manually,
+         | and manual reward spreadsheets.      | while student creators wait weeks for bounty
+         | Text: "The Content Bounty Bottleneck"| payouts. Today, we change that forever."
+--------------------------------------------------------------------------------
+00:20-   | [Screen Share] Terminal running      | "Meet InstaHack-Sol: the first automated Proof-of-
+00:45    | `anchor test` passing with 100%      | Coverage protocol on Solana. Organizers initialize an
+         | green checks. Mermaid architecture   | event PDA and fund the micro-bounty escrow vault in
+         | diagram animation highlighting PDAs. | SOL. Every student links their Instagram handle
+         |                                      | directly to their Phantom or Solflare wallet."
+--------------------------------------------------------------------------------
+00:45-   | [Screen Share] Live mobile device    | "Watch this: A student posts a high-octane Reel
+01:15    | uploading a 15-second Hackathon Reel | tagging #SolanaHackathonUni. Our decentralized
+         | to Instagram. Then transition to the | oracle keeper immediately captures the media ID,
+         | Keeper console reading Webhook &     | verifies the hashtag and timestamp, computes the
+         | broadcasting Solana transaction.     | SHA-256 hash, and calls submit_content_proof."
+--------------------------------------------------------------------------------
+01:15-   | [SolanaFM / Solscan Explorer]        | "Look at Solana Explorer! In less than 400 milliseconds,
+01:40    | Transaction confirmed in 400ms.      | the ContentSubmission PDA is initialized, and 0.5 SOL
+         | Balance of creator jumps by 0.5 SOL. | is streamed directly from the vault to the student's
+         | CU readout showing only 10,480 CUs.  | wallet. No claim buttons. No manual reviews. Sub-11,000
+         |                                      | compute units costing a mere fraction of a cent."
+--------------------------------------------------------------------------------
+01:40-   | [Full Slide Pitch]                   | "InstaHack-Sol transforms university hackathon documentation
+02:00    | "InstaHack-Sol: Virality Guaranteed, | into a trustless, viral incentive machine for the Solana
+         | Verified On-Chain."                  | ecosystem. Built for universities, ready for global
+         | GitHub Repo + Live Mainnet/Devnet link| scale. Thank you!"
+================================================================================

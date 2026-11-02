@@ -1,0 +1,65 @@
+================================================================================
+[00:00 - 00:20] HOOK & THE HACKATHON DILEMMA
+================================================================================
+Visual: 
+Screen split. Left side: Chaotic spreadsheet of Instagram handles, broken links, 
+and frustrated hackathon students asking "When is the bounty payout?". 
+Right side: Terminal running Solana test validator and fast-flashing Anchor CLI logs.
+
+Voiceover (Presenter):
+"Every university hackathon wants viral engagement on Instagram. But for organizers, 
+verifying 500 Reels, checking mentions, and distributing micro-bounties manually 
+takes days—and opens the door to duplicate claims and sybil attacks. 
+Introducing HackDoc: the decentralized proof-of-content protocol that transforms 
+Instagram coverage into instant, trustless Solana micro-grants."
+
+================================================================================
+[00:20 - 00:50] ARCHITECTURE & ORACLE ATTESTATION
+================================================================================
+Visual: 
+Mermaid diagram animation displaying the flow from Instagram Graph Webhook -> 
+Off-Chain Ed25519 Keeper -> Solana Program PDA Engine.
+
+Voiceover (Presenter):
+"Here's how it works under the hood:
+When a student posts an Instagram Reel tagging @solana and their university hackathon, 
+our lightweight keeper validates the media timestamp and metadata via Instagram's Graph API. 
+It hashes the media ID with SHA-256 and cryptographically signs an attestation payload. 
+The student submits this directly to our Anchor smart contract."
+
+================================================================================
+[00:50 - 01:25] LIVE DEMO: SUBMISSION, REPLAY DEFENSE, & INSTANT PAYOUT
+================================================================================
+Visual: 
+Screen recording of terminal running `anchor test`. 
+Zoom in on Alice claiming 0.5 SOL for Milestone 1 (Check-in). 
+Show Phantom/Solflare wallet receiving +0.5 SOL instantly. 
+Next, demonstrate Bob trying to re-submit Alice's Media ID—terminal returns:
+`Error: ContentRecord PDA already in use`.
+
+Voiceover (Presenter):
+"Watch the test suite execute live. 
+Test 1 initializes the event escrow with 5 SOL.
+In Test 3, Alice submits her verified Reel for Milestone 1. Within 400 milliseconds, 
+the vault PDA signs the transfer, paying 0.5 SOL straight to Alice's wallet, 
+while storing the content hash permanently on Solana.
+In Test 4, a bad actor attempts to claim Alice's video ID. The Solana runtime 
+instantly rejects the transaction with zero state corruption. Replay attacks: impossible. 
+Total Compute Units consumed? Less than 12,000 CU!"
+
+================================================================================
+[01:25 - 02:00] IMPACT, SCALABILITY & CLOSING
+================================================================================
+Visual: 
+Camera shifts to presenter holding phone showing university hackathon atmosphere, 
+displaying the HackDoc mobile web interface where students connect Phantom and 
+link their Instagram handles.
+
+Voiceover (Presenter):
+"HackDoc doesn't just document the hackathon—it builds a verifiable on-chain 
+reputation for university builders and turns storytelling into a competitive sport. 
+By eliminating manual reviews and providing real-time bounties, HackDoc supercharges 
+Solana's brand visibility across universities worldwide. 
+Vote for HackDoc: Production-ready code, trustless escrow, and the ultimate 
+engine for student hackathon growth."
+================================================================================

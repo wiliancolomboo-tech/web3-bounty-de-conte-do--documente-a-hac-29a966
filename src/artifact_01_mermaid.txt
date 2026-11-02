@@ -1,0 +1,37 @@
+flowchart TD
+    subgraph OffChain["Off-Chain Layer: Instagram & Keeper Daemon"]
+        IG[Instagram Graph API / Webhook] -->|Media Upload Event| Daemon[Oracle / Attestation Keeper Service]
+        Creator[Student Creator] -->|Uploads Hackathon Reel/Story/Post| IG
+        Daemon -->|SHA-256 Media Hash + Sig| Engine[Oracle Ed25519 Signer]
+    end
+
+    subgraph SolanaRuntime["Solana Runtime: InstaHack Core Protocol"]
+        Engine -->|tx: submit_content_proof| Entrypoint[Anchor Program Entrypoint]
+        
+        subgraph SecurityGuards["Security & Validation Checks"]
+            Entrypoint --> G1{Signer Check: Creator & Oracle}
+            G1 -->|Pass| G2{State Guard: Event Active & Not Paused}
+            G2 -->|Pass| G3{Hash Duplication Check: PDA Collision Guard}
+            G3 -->|Pass| G4{Timestamp Window: within Hackathon Timeline}
+        end
+
+        subgraph AccountDerivations["PDA State Accounts"]
+            G4 --> PDA1["HackathonEvent PDA: ['event', event_id]"]
+            G4 --> PDA2["CreatorRecord PDA: ['creator', event_id, creator_pubkey]"]
+            G4 --> PDA3["ContentSubmission PDA: ['submission', event_id, media_id_hash]"]
+            G4 --> PDA4["EscrowVault PDA: ['vault', event_id]"]
+        end
+
+        subgraph CPIExecution["Cross-Program Invocation (CPI)"]
+            PDA3 -->|State Committed| TokenProg[SPL Token / System Program]
+            PDA4 -->|Signer Seeds: ['vault', event_id, bump]| TokenProg
+            TokenProg -->|Transfer Micro-Bounty| CreatorWallet[Creator Token Account / Wallet]
+        end
+    end
+
+    classDef security fill:#ff4d4f,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef state fill:#1890ff,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef offchain fill:#52c41a,stroke:#fff,stroke-width:2px,color:#fff;
+    class G1,G2,G3,G4 security;
+    class PDA1,PDA2,PDA3,PDA4 state;
+    class IG,Daemon,Engine offchain;

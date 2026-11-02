@@ -1,0 +1,9 @@
+hackathon_content_attestation
+    ✔ 1. Initializes the University Hackathon Event with Budget Vault (428ms)
+    ✔ 2. Registers University Student Creator Profile (189ms)
+    ✔ 3. Submits Instagram Post Content Claim (194ms)
+    ✔ 4. Oracle Keeper Verifies Post & Disburses SPL Token Reward (312ms)
+    ✔ 5. Rejects Duplicate Claim Submission for Same Instagram Post (95ms)
+    ✔ 6. Prevents Unauthorized Signer from Acting as Oracle (110ms)
+
+  6 passing (1.33s)

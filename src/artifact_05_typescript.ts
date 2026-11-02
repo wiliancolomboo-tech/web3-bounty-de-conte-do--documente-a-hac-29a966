@@ -1,24 +1,23 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { HackathonContentRegistry } from "../target/types/hackathon_content_registry";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Hackdoc } from "../target/types/hackdoc";
+import { PublicKey, Keypair, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import crypto from "crypto";
 
-describe("hackathon_content_registry", () => {
+describe("HackDoc Protocol Test Matrix", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.HackathonContentRegistry as Program<HackathonContentRegistry>;
+  const program = anchor.workspace.Hackdoc as Program<Hackdoc>;
 
-  const admin = provider.wallet;
-  const oracleKeeper = Keypair.generate();
-  const student = Keypair.generate();
-  const unauthorizedOracle = Keypair.generate();
+  const organizer = Keypair.generate();
+  const oracle = Keypair.generate();
+  const participant = Keypair.generate();
+  const attacker = Keypair.generate();
 
-  const hackathonId = new anchor.BN(202501);
-  const rewardPerSub = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
-  const fundingAmount = new anchor.BN(5 * LAMPORTS_PER_SOL);
+  const hackathonId = "USP_HACK_2025";
+  const rewardAmount = new anchor.BN(0.5 * LAMPORTS_PER_SOL);
 
   let hackathonPda: PublicKey;
   let vaultPda: PublicKey;
@@ -26,135 +25,158 @@ describe("hackathon_content_registry", () => {
 
   before(async () => {
     // Fund test wallets
-    const airdropSig1 = await provider.connection.requestAirdrop(student.publicKey, 2 * LAMPORTS_PER_SOL);
-    await provider.connection.confirmTransaction(airdropSig1);
-
-    const airdropSig2 = await provider.connection.requestAirdrop(oracleKeeper.publicKey, 2 * LAMPORTS_PER_SOL);
-    await provider.connection.confirmTransaction(airdropSig2);
+    const airdropSigners = [organizer, oracle, participant, attacker];
+    for (const s of airdropSigners) {
+      const sig = await provider.connection.requestAirdrop(s.publicKey, 10 * LAMPORTS_PER_SOL);
+      await provider.connection.confirmTransaction(sig);
+    }
 
     [hackathonPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("hackathon"), hackathonId.toArrayLike(Buffer, "le", 8)],
+      [Buffer.from("hackathon"), organizer.publicKey.toBuffer(), Buffer.from(hackathonId)],
       program.programId
     );
 
     [vaultPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("escrow_vault"), hackathonId.toArrayLike(Buffer, "le", 8)],
+      [Buffer.from("vault"), hackathonPda.toBuffer()],
       program.programId
     );
 
     [submissionPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("submission"), hackathonPda.toBuffer(), student.publicKey.toBuffer()],
+      [Buffer.from("submission"), hackathonPda.toBuffer(), participant.publicKey.toBuffer()],
       program.programId
     );
   });
 
-  it("1. Initializes hackathon escrow track successfully", async () => {
+  it("1. Initializes Hackathon State & Funds Vault Escrow", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const start = new anchor.BN(now - 60);
+    const end = new anchor.BN(now + 3600);
+
     await program.methods
-      .initializeHackathon(hackathonId, rewardPerSub, oracleKeeper.publicKey)
+      .initializeHackathon(hackathonId, rewardAmount, start, end, oracle.publicKey)
       .accounts({
         hackathon: hackathonPda,
-        escrowVault: vaultPda,
-        admin: admin.publicKey,
+        vault: vaultPda,
+        authority: organizer.publicKey,
         systemProgram: SystemProgram.programId,
       })
+      .signers([organizer])
       .rpc();
+
+    // Fund the escrow vault
+    const fundTx = new anchor.web3.Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: organizer.publicKey,
+        toPubkey: vaultPda,
+        lamports: 2 * LAMPORTS_PER_SOL,
+      })
+    );
+    await provider.sendAndConfirm(fundTx, [organizer]);
 
     const state = await program.account.hackathonState.fetch(hackathonPda);
-    expect(state.admin.toBase58()).to.equal(admin.publicKey.toBase58());
-    expect(state.oraclePubkey.toBase58()).to.equal(oracleKeeper.publicKey.toBase58());
-    expect(state.rewardPerSubmission.toNumber()).to.equal(rewardPerSub.toNumber());
-    expect(state.isActive).to.be.true;
+    expect(state.authority.toBase58()).to.equal(organizer.publicKey.toBase58());
+    expect(state.oracleAuthority.toBase58()).to.equal(oracle.publicKey.toBase58());
+    expect(state.rewardPerSubmission.eq(rewardAmount)).to.be.true;
+
+    const vaultBalance = await provider.connection.getBalance(vaultPda);
+    expect(vaultBalance).to.equal(2 * LAMPORTS_PER_SOL);
   });
 
-  it("2. Funds hackathon escrow vault with native SOL", async () => {
+  const rawMediaId = "INSTA_REEL_98234123984";
+  const mediaHash = crypto
+    .createHash("sha256")
+    .update(Buffer.from(rawMediaId))
+    .update(participant.publicKey.toBuffer())
+    .digest();
+
+  it("2. Hacker submits Instagram documentation proof intent", async () => {
     await program.methods
-      .fundHackathonVault(fundingAmount)
+      .submitDocumentation(Array.from(mediaHash))
       .accounts({
+        submission: submissionPda,
         hackathon: hackathonPda,
-        escrowVault: vaultPda,
-        funder: admin.publicKey,
+        participant: participant.publicKey,
         systemProgram: SystemProgram.programId,
       })
+      .signers([participant])
       .rpc();
 
-    const balance = await provider.connection.getBalance(vaultPda);
-    expect(balance).to.equal(fundingAmount.toNumber());
+    const sub = await program.account.submissionRecord.fetch(submissionPda);
+    expect(sub.participant.toBase58()).to.equal(participant.publicKey.toBase58());
+    expect(sub.isVerified).to.be.false;
+    expect(sub.isClaimed).to.be.false;
   });
 
-  it("3. Prevents claims with unauthorized oracle signatures", async () => {
-    const handleHash = Array.from(crypto.createHash("sha256").update("@student_dev").digest());
-    const mediaHash = Array.from(crypto.createHash("sha256").update("IG_MEDIA_991823").digest());
-    const arweaveUri = "https://arweave.net/tx_placeholder_identifier";
-
+  it("3. Rejects unauthorized oracle verification", async () => {
     try {
       await program.methods
-        .claimContentBounty(handleHash, mediaHash, arweaveUri)
+        .verifySubmission(Array.from(mediaHash))
         .accounts({
-          hackathon: hackathonPda,
-          escrowVault: vaultPda,
           submission: submissionPda,
-          student: student.publicKey,
-          oracleSigner: unauthorizedOracle.publicKey,
-          systemProgram: SystemProgram.programId,
+          hackathon: hackathonPda,
+          oracleAuthority: attacker.publicKey,
         })
-        .signers([student, unauthorizedOracle])
+        .signers([attacker])
         .rpc();
-      expect.fail("Should have failed due to invalid oracle signature");
+      expect.fail("Should fail due to unauthorized oracle");
     } catch (err: any) {
       expect(err.error.errorCode.code).to.equal("UnauthorizedOracle");
     }
   });
 
-  it("4. Student executes valid claim with official Oracle co-signer", async () => {
-    const handleHash = Array.from(crypto.createHash("sha256").update("@student_dev").digest());
-    const mediaHash = Array.from(crypto.createHash("sha256").update("IG_MEDIA_991823").digest());
-    const arweaveUri = "https://arweave.net/tx_valid_uri";
-
-    const prevStudentBal = await provider.connection.getBalance(student.publicKey);
-
+  it("4. Authorized Oracle validates Instagram hashtag proof", async () => {
     await program.methods
-      .claimContentBounty(handleHash, mediaHash, arweaveUri)
+      .verifySubmission(Array.from(mediaHash))
       .accounts({
-        hackathon: hackathonPda,
-        escrowVault: vaultPda,
         submission: submissionPda,
-        student: student.publicKey,
-        oracleSigner: oracleKeeper.publicKey,
-        systemProgram: SystemProgram.programId,
+        hackathon: hackathonPda,
+        oracleAuthority: oracle.publicKey,
       })
-      .signers([student, oracleKeeper])
+      .signers([oracle])
       .rpc();
 
-    const postStudentBal = await provider.connection.getBalance(student.publicKey);
-    expect(postStudentBal).to.be.above(prevStudentBal);
-
-    const subAcc = await program.account.submissionRecord.fetch(submissionPda);
-    expect(subAcc.student.toBase58()).to.equal(student.publicKey.toBase58());
-    expect(subAcc.claimed).to.be.true;
+    const sub = await program.account.submissionRecord.fetch(submissionPda);
+    expect(sub.isVerified).to.be.true;
   });
 
-  it("5. Prevents double-spend replay attacks by same student", async () => {
-    const handleHash = Array.from(crypto.createHash("sha256").update("@student_dev").digest());
-    const mediaHash = Array.from(crypto.createHash("sha256").update("IG_MEDIA_991823").digest());
-    const arweaveUri = "https://arweave.net/tx_valid_uri";
+  it("5. Hacker claims prize escrow payout", async () => {
+    const balanceBefore = await provider.connection.getBalance(participant.publicKey);
 
+    await program.methods
+      .claimReward()
+      .accounts({
+        submission: submissionPda,
+        hackathon: hackathonPda,
+        vault: vaultPda,
+        participant: participant.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([participant])
+      .rpc();
+
+    const balanceAfter = await provider.connection.getBalance(participant.publicKey);
+    expect(balanceAfter - balanceBefore).to.be.closeTo(rewardAmount.toNumber(), 10000000); // minus tx fee
+
+    const sub = await program.account.submissionRecord.fetch(submissionPda);
+    expect(sub.isClaimed).to.be.true;
+  });
+
+  it("6. Prevents double-claim attack", async () => {
     try {
       await program.methods
-        .claimContentBounty(handleHash, mediaHash, arweaveUri)
+        .claimReward()
         .accounts({
-          hackathon: hackathonPda,
-          escrowVault: vaultPda,
           submission: submissionPda,
-          student: student.publicKey,
-          oracleSigner: oracleKeeper.publicKey,
+          hackathon: hackathonPda,
+          vault: vaultPda,
+          participant: participant.publicKey,
           systemProgram: SystemProgram.programId,
         })
-        .signers([student, oracleKeeper])
+        .signers([participant])
         .rpc();
-      expect.fail("Should fail due to PDA collision (already initialized)");
+      expect.fail("Should have thrown AlreadyClaimed");
     } catch (err: any) {
-      // Anchor throws an error when trying to init an account that already exists
-      expect(err.toString()).to.include("already in use");
+      expect(err.error.errorCode.code).to.equal("AlreadyClaimed");
     }
   });
 });
